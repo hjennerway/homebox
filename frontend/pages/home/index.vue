@@ -24,6 +24,7 @@
 
   const api = useUserApi();
   const breakpoints = useBreakpoints();
+  const preferences = useViewPreferences();
 
   const locationStore = useLocationStore();
   const locations = computed(() => locationStore.parentLocations);
@@ -45,7 +46,7 @@
         </div>
       </section>
 
-      <section>
+      <section v-if="preferences.showHomeRecentlyAdded">
         <Subtitle> {{ $t("home.recently_added") }} </Subtitle>
 
         <p v-if="itemTable.items.length === 0" class="ml-2 text-sm">{{ $t("items.no_results") }}</p>
@@ -65,7 +66,7 @@
         </div>
       </section>
 
-      <section>
+      <section v-if="preferences.showHomeTags">
         <Subtitle> {{ $t("home.tags") }} </Subtitle>
         <p v-if="tags.length === 0" class="ml-2 text-sm">{{ $t("tags.no_results") }}</p>
         <div v-else class="flex flex-wrap gap-4">

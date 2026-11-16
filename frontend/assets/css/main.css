@@ -36,6 +36,38 @@
     --radius: 0.5rem;
 }
 
+  .theme-dark {
+    color-scheme: dark;
+    --background: 145 12% 10%;
+    --background-accent: 145 11% 20%;
+    --foreground: 140 14% 92%;
+    --primary: 143 28% 65%;
+    --primary-foreground: 145 24% 12%;
+    --secondary: 145 10% 25%;
+    --secondary-foreground: 140 14% 92%;
+    --accent: 145 16% 23%;
+    --accent-foreground: 140 20% 94%;
+    --muted: 145 10% 18%;
+    --muted-foreground: 140 10% 72%;
+    --card: 145 11% 14%;
+    --card-foreground: 140 14% 92%;
+    --popover: 145 11% 16%;
+    --popover-foreground: 140 14% 92%;
+    --destructive: 0 75% 68%;
+    --destructive-foreground: 0 55% 12%;
+    --input: 145 9% 39%;
+    --border: 145 9% 30%;
+    --ring: 143 28% 65%;
+    --sidebar-background: var(--card);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
+  }
+
   /*
   * The below themes are based on the daisyUI themes which are licensed under the MIT License.
   * Copyright (c) 2020 Pouya Saadeghi

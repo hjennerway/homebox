@@ -33,22 +33,21 @@
   <AlertDialog v-model:open="copyError">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle class="space-y-2">
+        <AlertDialogTitle>
           {{ $t("components.global.copy_text.failed_to_copy") }}
-          {{ isNotHttps ? $t("components.global.copy_text.https_required") : "" }}
         </AlertDialogTitle>
         <AlertDialogDescription class="text-sm">
-          {{ $t("components.global.copy_text.learn_more") }}
-          <a
-            href="https://homebox.software/en/user-guide/tips-tricks.html#copy-to-clipboard"
-            class="text-primary hover:underline"
-            target="_blank"
-            rel="noopener"
-          >
-            {{ $t("components.global.copy_text.documentation") }}
-          </a>
+          {{ $t("components.global.copy_text.manual_copy") }}
         </AlertDialogDescription>
       </AlertDialogHeader>
+      <textarea
+        :value="text"
+        :aria-label="$t('components.global.copy_text.manual_copy')"
+        class="w-full rounded-md border bg-background p-2 text-sm"
+        rows="2"
+        readonly
+        @focus="selectText"
+      />
       <AlertDialogFooter>
         <AlertDialogAction>{{ $t("components.global.copy_text.continue") }}</AlertDialogAction>
       </AlertDialogFooter>
@@ -57,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useTimeoutFn } from "@vueuse/core";
   import MdiContentCopy from "~icons/mdi/content-copy";
   import MdiClipboard from "~icons/mdi/clipboard";
   import {
@@ -86,15 +86,43 @@
     },
   });
 
-  const { copy, copied } = useClipboard({ source: props.text, copiedDuring: 1000 });
+  const copied = ref(false);
+  const { start: resetCopied } = useTimeoutFn(() => (copied.value = false), 1000, { immediate: false });
   const copyError = ref(false);
-  const isNotHttps = window.location.protocol !== "https:";
+
+  function selectText(event: FocusEvent) {
+    (event.target as HTMLTextAreaElement).select();
+  }
+
+  function copyWithoutClipboardApi(text: string) {
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.readOnly = true;
+    field.style.cssText = "position: fixed; top: 0; left: 0; opacity: 0;";
+    document.body.appendChild(field);
+    try {
+      field.select();
+      return document.execCommand("copy");
+    } catch {
+      return false;
+    } finally {
+      field.remove();
+    }
+  }
 
   async function copyText() {
-    await copy(props.text);
-    if (!copied.value) {
-      console.error(`Failed to copy to clipboard${isNotHttps ? " likely because protocol is not https" : ""}`);
-      copyError.value = true;
+    let success = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(props.text);
+        success = true;
+      }
+    } catch {
+      // If access is denied, try the browser's legacy copy command.
     }
+
+    copied.value = success || copyWithoutClipboardApi(props.text);
+    if (copied.value) resetCopied();
+    else copyError.value = true;
   }
 </script>

@@ -2,6 +2,7 @@
     "collection": {
         "copy_invite": "Copy Invite Link",
         "create_invite": "Create Invite",
+        "dark_mode": "Dark mode",
         "delete_collection": "Delete Collection",
         "delete_confirm": "Are you sure you want to delete this collection? This action cannot be undone.",
         "deleted_collection": "Collection deleted.",
@@ -36,6 +37,7 @@
         "remaining_uses": "Remaining uses",
         "tabs": {
             "entity_types": "Entity Types",
+            "home_page": "Home page",
             "invites": "Invites",
             "members": "Members",
             "notifiers": "Notifiers",
@@ -208,6 +210,7 @@
                 "continue": "Continue",
                 "documentation": "documentation",
                 "failed_to_copy": "Failed to copy text to clipboard",
+                "manual_copy": "Select and copy this text manually.",
                 "https_required": "because HTTPS is required",
                 "learn_more": "Learn more in our"
             },

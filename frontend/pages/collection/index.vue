@@ -9,6 +9,7 @@
   import MdiEmailPlus from "~icons/mdi/email-plus";
   import MdiBell from "~icons/mdi/bell";
   import MdiCog from "~icons/mdi/cog";
+  import MdiHome from "~icons/mdi/home";
   import MdiShape from "~icons/mdi/shape";
   import MdiWrench from "~icons/mdi/wrench";
   import MdiLogout from "~icons/mdi/logout";
@@ -54,6 +55,12 @@
       label: "collection.tabs.settings",
       to: "/collection/settings",
       icon: MdiCog,
+    },
+    {
+      id: "home-page",
+      label: "collection.tabs.home_page",
+      to: "/collection/home-page",
+      icon: MdiHome,
     },
     {
       id: "entity-types",
@@ -222,7 +229,7 @@
       </Card>
 
       <div class="my-3 flex flex-wrap items-center justify-between gap-2">
-        <ButtonGroup>
+        <ButtonGroup class="flex-wrap gap-y-1">
           <Button
             v-for="tab in tabs"
             :key="tab.id"
@@ -230,7 +237,7 @@
             :variant="tab.to === currentPath ? 'default' : 'outline'"
             size="sm"
           >
-            <NuxtLink :to="tab.to" class="flex items-center gap-2">
+            <NuxtLink :to="tab.to" :aria-label="t(tab.label)" class="flex items-center gap-2">
               <component :is="tab.icon" v-if="tab.icon" class="size-4" />
               <span class="hidden sm:block">{{ t(tab.label) }}</span>
             </NuxtLink>

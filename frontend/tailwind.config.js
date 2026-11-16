@@ -10,6 +10,7 @@ export default {
     "theme-corporate",
     "theme-cupcake",
     "theme-cyberpunk",
+    "theme-dark",
     "theme-dracula",
     "theme-emerald",
     "theme-fantasy",

@@ -49,6 +49,10 @@ export const themes: ThemeOption[] = [
     value: "light",
   },
   {
+    label: "Dark",
+    value: "dark",
+  },
+  {
     label: "Cupcake",
     value: "cupcake",
   },
@@ -155,6 +159,7 @@ export const themes: ThemeOption[] = [
 ];
 
 export const darkThemes: DaisyTheme[] = [
+  "dark",
   "synthwave",
   "retro",
   "cyberpunk",
