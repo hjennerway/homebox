@@ -1005,7 +1005,8 @@ type locationCounts struct {
 	subLocations int
 }
 
-// getLocationCounts totals item quantities by effective location and counts immediate sub-locations by parent.
+// getLocationCounts totals item quantities throughout each location's hierarchy
+// and counts immediate sub-locations by parent.
 func (r *EntityRepository) getLocationCounts(ctx context.Context, gid uuid.UUID, locationIDs []uuid.UUID) (map[uuid.UUID]locationCounts, error) {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.getLocationCounts",
 		trace.WithAttributes(
@@ -1029,17 +1030,32 @@ func (r *EntityRepository) getLocationCounts(ctx context.Context, gid uuid.UUID,
 
 	// Items can have an explicit location independent of their parent (#1688).
 	location := fmt.Sprintf("CASE WHEN et.is_location THEN e.entity_children ELSE %s END", locationOrParentColumn("e"))
+	// UNION visits each descendant once per root and terminates on cyclic data.
 	query := fmt.Sprintf(`
-		SELECT %s,
-			SUM(CASE WHEN et.is_location THEN 0 ELSE e.quantity END),
-			COUNT(CASE WHEN et.is_location THEN 1 END)
-		FROM entities e
-		JOIN entity_types et ON et.id = e.entity_type_entities
-		WHERE e.group_entities = $1
-			AND e.archived = false
-			AND %s IN (%s)
-		GROUP BY %s
-	`, location, location, strings.Join(placeholders, ","), location)
+		WITH RECURSIVE active_entities AS (
+			SELECT e.id, e.quantity, et.is_location, %s AS parent_id
+			FROM entities e
+			JOIN entity_types et ON et.id = e.entity_type_entities
+			WHERE e.group_entities = $1 AND e.archived = false
+		),
+		location_descendants(root_id, entity_id) AS (
+			SELECT id, id
+			FROM entities
+			WHERE group_entities = $1 AND id IN (%s)
+
+			UNION
+
+			SELECT d.root_id, e.id
+			FROM location_descendants d
+			JOIN active_entities e ON e.parent_id = d.entity_id
+		)
+		SELECT d.root_id,
+			COALESCE(SUM(CASE WHEN e.is_location = false THEN e.quantity END), 0),
+			COUNT(CASE WHEN e.is_location AND e.parent_id = d.root_id THEN 1 END)
+		FROM location_descendants d
+		LEFT JOIN active_entities e ON e.id = d.entity_id AND d.entity_id <> d.root_id
+		GROUP BY d.root_id
+	`, location, strings.Join(placeholders, ","))
 
 	rows, err := r.db.Sql().QueryContext(ctx, query, args...)
 	if err != nil {
