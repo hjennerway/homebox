@@ -35,6 +35,8 @@ export type ThemeOption = {
   value: DaisyTheme;
 };
 
+export type ThemePreference = DaisyTheme | "system";
+
 export const themes: ThemeOption[] = [
   {
     label: "Homebox",

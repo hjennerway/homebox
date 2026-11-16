@@ -1,0 +1,60 @@
+name: Sync upstream
+
+on:
+  schedule:
+    # Cron resets at month boundaries, so check the 10-day interval in the job.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'hjennerway/homebox' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check sync date
+        id: cadence
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          today=$(date -u +%F)
+          today_seconds=$(date -u -d "$today" +%s)
+          anchor_seconds=$(date -u -d 2026-11-16 +%s)
+          if [[ "$EVENT_NAME" == workflow_dispatch ]] || (( (today_seconds - anchor_seconds) % 864000 == 0 )); then
+            echo "sync=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out fork main
+        if: steps.cadence.outputs.sync == 'true'
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          ref: main
+          fetch-depth: 0
+          # A token with Workflows write access can also push upstream workflow changes.
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+
+      - name: Merge upstream main
+        if: steps.cadence.outputs.sync == 'true'
+        shell: bash
+        run: |
+          git fetch --no-tags https://github.com/sysadminsmedia/homebox.git refs/heads/main
+          if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+            echo "Already up to date with upstream."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git merge --no-edit FETCH_HEAD; then
+            echo "::error::Upstream merge failed. Merge sysadminsmedia/homebox main into the fork locally and resolve any conflicts before pushing."
+            exit 1
+          fi
+
+          git push origin HEAD:refs/heads/main

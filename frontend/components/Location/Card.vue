@@ -19,10 +19,14 @@
           <span class="mx-auto">
             {{ location.name }}
           </span>
-          <Badge :class="{ 'opacity-0': !hasCount }">
+          <Badge v-if="!showCounts" :class="{ 'opacity-0': !hasCount }">
             {{ count }}
           </Badge>
         </h2>
+        <p v-if="showCounts" class="mt-1 flex flex-wrap justify-center gap-x-3 text-sm text-muted-foreground">
+          <span>{{ $t("home.sub_location_count", { count: (location as EntitySummary).subLocationCount ?? 0 }) }}</span>
+          <span>{{ $t("home.item_count", { count: count ?? 0 }) }}</span>
+        </p>
       </div>
     </NuxtLink>
   </Card>
@@ -41,6 +45,10 @@
       required: true,
     },
     dense: {
+      type: Boolean,
+      default: false,
+    },
+    showCounts: {
       type: Boolean,
       default: false,
     },

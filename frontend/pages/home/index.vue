@@ -62,7 +62,7 @@
         <Subtitle> {{ $t("home.storage_locations") }} </Subtitle>
         <p v-if="locations.length === 0" class="ml-2 text-sm">{{ $t("locations.no_results") }}</p>
         <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <LocationCard v-for="location in locations" :key="location.id" :location="location" />
+          <LocationCard v-for="location in locations" :key="location.id" :location="location" show-counts />
         </div>
       </section>
 

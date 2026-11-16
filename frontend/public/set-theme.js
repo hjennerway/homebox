@@ -1,10 +1,13 @@
-try {
-  console.log("Setting theme");
-  const theme = JSON.parse(localStorage.getItem("homebox/preferences/location")).theme;
-  if (theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    document.documentElement.classList.add("theme-" + theme);
+(() => {
+  let preference = "system";
+  try {
+    preference = JSON.parse(localStorage.getItem("homebox/preferences/location"))?.theme || preference;
+  } catch {
+    // Use the device preference if saved settings cannot be read.
   }
-} catch (e) {
-  console.error("Failed to set theme", e);
-}
+
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = preference === "system" ? (prefersDark ? "dark" : "homebox") : preference;
+  document.documentElement.setAttribute("data-theme", theme);
+  document.documentElement.classList.add("theme-" + theme);
+})();

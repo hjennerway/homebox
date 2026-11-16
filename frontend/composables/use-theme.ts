@@ -1,4 +1,5 @@
 import type { ComputedRef } from "vue";
+import { usePreferredDark } from "@vueuse/core";
 import type { DaisyTheme } from "~~/lib/data/themes";
 
 export interface UseTheme {
@@ -8,7 +9,11 @@ export interface UseTheme {
 
 export function useTheme(): UseTheme {
   const preferences = useViewPreferences();
-  const theme = computed(() => preferences.value.theme);
+  const prefersDark = usePreferredDark();
+  const theme = computed<DaisyTheme>(() => {
+    const preference = preferences.value.theme || "system";
+    return preference === "system" ? (prefersDark.value ? "dark" : "homebox") : preference;
+  });
   const htmlEl = ref<HTMLElement | null>(null);
 
   const applyThemeToDom = (newTheme: DaisyTheme) => {

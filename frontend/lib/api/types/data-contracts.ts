@@ -877,6 +877,7 @@ export interface EntitySummary {
   quantity: number;
   /** Sale details */
   soldDate: Date | string;
+  subLocationCount?: number;
   tags: TagSummary[];
   thumbnailId?: string | null;
   updatedAt: Date | string;

@@ -187,7 +187,8 @@ type (
 		SoldDate types.Date `json:"soldDate"`
 
 		// Container-specific (populated when querying locations)
-		ItemCount float64 `json:"itemCount,omitempty"`
+		ItemCount        float64 `json:"itemCount,omitempty"`
+		SubLocationCount int     `json:"subLocationCount,omitempty"`
 	}
 
 	EntityOut struct {
@@ -968,19 +969,19 @@ func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q En
 	fetchSpan.SetAttributes(attribute.Int("query.results.count", len(entities)))
 	fetchSpan.End()
 
-	// Populate ItemCount for location-type entities
+	// Populate counts for location-type entities.
 	if q.IsLocation != nil && *q.IsLocation && len(entities) > 0 {
-		childCtx, childSpan := entityTracer().Start(ctx, "repo.EntityRepository.QueryByGroup.childItemCounts",
+		childCtx, childSpan := entityTracer().Start(ctx, "repo.EntityRepository.QueryByGroup.locationCounts",
 			trace.WithAttributes(attribute.Int("locations.count", len(entities))))
 		ids := lo.Map(entities, func(e EntitySummary, _ int) uuid.UUID { return e.ID })
-		counts, cErr := r.getChildItemCounts(childCtx, gid, ids)
+		counts, cErr := r.getLocationCounts(childCtx, gid, ids)
 		if cErr != nil {
 			recordSpanError(childSpan, cErr)
 		} else {
 			for i := range entities {
-				if c, ok := counts[entities[i].ID]; ok {
-					entities[i].ItemCount = c
-				}
+				count := counts[entities[i].ID]
+				entities[i].ItemCount = count.items
+				entities[i].SubLocationCount = count.subLocations
 			}
 		}
 		childSpan.End()
@@ -999,9 +1000,14 @@ func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q En
 	}, nil
 }
 
-// getChildItemCounts returns a map of entity ID → sum of child item quantities for the given location IDs.
-func (r *EntityRepository) getChildItemCounts(ctx context.Context, gid uuid.UUID, locationIDs []uuid.UUID) (map[uuid.UUID]float64, error) {
-	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.getChildItemCounts",
+type locationCounts struct {
+	items        float64
+	subLocations int
+}
+
+// getLocationCounts totals item quantities by effective location and counts immediate sub-locations by parent.
+func (r *EntityRepository) getLocationCounts(ctx context.Context, gid uuid.UUID, locationIDs []uuid.UUID) (map[uuid.UUID]locationCounts, error) {
+	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.getLocationCounts",
 		trace.WithAttributes(
 			attribute.String("group.id", gid.String()),
 			attribute.Int("locations.count", len(locationIDs)),
@@ -1021,18 +1027,19 @@ func (r *EntityRepository) getChildItemCounts(ctx context.Context, gid uuid.UUID
 		args = append(args, id)
 	}
 
-	// Count by effective location, not by parent (#1688).
-	eff := locationOrParentColumn("e")
+	// Items can have an explicit location independent of their parent (#1688).
+	location := fmt.Sprintf("CASE WHEN et.is_location THEN e.entity_children ELSE %s END", locationOrParentColumn("e"))
 	query := fmt.Sprintf(`
-		SELECT %s, COALESCE(SUM(e.quantity), 0)
+		SELECT %s,
+			SUM(CASE WHEN et.is_location THEN 0 ELSE e.quantity END),
+			COUNT(CASE WHEN et.is_location THEN 1 END)
 		FROM entities e
 		JOIN entity_types et ON et.id = e.entity_type_entities
 		WHERE e.group_entities = $1
-			AND et.is_location = false
 			AND e.archived = false
 			AND %s IN (%s)
 		GROUP BY %s
-	`, eff, eff, strings.Join(placeholders, ","), eff)
+	`, location, location, strings.Join(placeholders, ","), location)
 
 	rows, err := r.db.Sql().QueryContext(ctx, query, args...)
 	if err != nil {
@@ -1041,15 +1048,15 @@ func (r *EntityRepository) getChildItemCounts(ctx context.Context, gid uuid.UUID
 	}
 	defer func() { _ = rows.Close() }()
 
-	result := make(map[uuid.UUID]float64)
+	result := make(map[uuid.UUID]locationCounts)
 	for rows.Next() {
-		var parentID uuid.UUID
-		var count float64
-		if err := rows.Scan(&parentID, &count); err != nil {
+		var locationID uuid.UUID
+		var count locationCounts
+		if err := rows.Scan(&locationID, &count.items, &count.subLocations); err != nil {
 			recordSpanError(span, err)
 			return nil, err
 		}
-		result[parentID] = count
+		result[locationID] = count
 	}
 	if err := rows.Err(); err != nil {
 		recordSpanError(span, err)

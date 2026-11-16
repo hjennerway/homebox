@@ -2,7 +2,10 @@
     "collection": {
         "copy_invite": "Copy Invite Link",
         "create_invite": "Create Invite",
-        "dark_mode": "Dark mode",
+        "appearance": "Appearance",
+        "appearance_system": "Follow device settings",
+        "appearance_light": "Light",
+        "appearance_dark": "Dark",
         "delete_collection": "Delete Collection",
         "delete_confirm": "Are you sure you want to delete this collection? This action cannot be undone.",
         "deleted_collection": "Collection deleted.",
@@ -502,9 +505,11 @@
         "yes": "Yes"
     },
     "home": {
+        "item_count": "{count, plural, one {# item} other {# items}}",
         "quick_statistics": "Quick Statistics",
         "recently_added": "Recently Added",
         "storage_locations": "Storage Locations",
+        "sub_location_count": "{count, plural, one {# sub-location} other {# sub-locations}}",
         "tags": "Tags",
         "total_items": "Total Items",
         "total_locations": "Total Locations",

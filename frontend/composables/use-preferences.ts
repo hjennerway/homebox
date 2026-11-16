@@ -1,6 +1,6 @@
 import type { Ref } from "vue";
 import type { EntitySummary } from "~/lib/api/types/data-contracts";
-import type { DaisyTheme } from "~~/lib/data/themes";
+import type { ThemePreference } from "~~/lib/data/themes";
 
 export type ViewType = "table" | "card";
 
@@ -16,7 +16,7 @@ export type LocationViewPreferences = {
   showEmpty: boolean;
   editorAdvancedView: boolean;
   itemDisplayView: ViewType;
-  theme: DaisyTheme;
+  theme: ThemePreference;
   showHomeRecentlyAdded: boolean;
   showHomeTags: boolean;
   itemsPerTablePage: number;
@@ -49,7 +49,7 @@ const DEFAULT_PREFERENCES: LocationViewPreferences = {
   showEmpty: true,
   editorAdvancedView: false,
   itemDisplayView: "card",
-  theme: "homebox",
+  theme: "system",
   showHomeRecentlyAdded: true,
   showHomeTags: true,
   itemsPerTablePage: 12,
